@@ -1,5 +1,6 @@
 package com.brus.sokobrus.view;
 
+import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -9,6 +10,7 @@ import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.widget.ArrayAdapter;
 import android.widget.RelativeLayout;
 
 import com.brus.sokobrus.R;
@@ -21,11 +23,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity{
 
+    private static final String SAVE_STATE_KEY = "Maze";
     private static String SHARED_PREFERENCES = "shared_preferences";
     private static String CURRENT_LEVEL = "current_level";
-    private static final String SAVE_STATE_KEY = "Maze";
     private RelativeLayout frame;
     private GestureDetector gestureDetector;
     private Maze maze = new Maze();
@@ -66,6 +68,8 @@ public class MainActivity extends Activity {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
+
+        menu.findItem(R.id.select_level).setTitle(String.format(getString(R.string.select_level), currentLevel + 1));
         return true;
     }
 
@@ -77,7 +81,7 @@ public class MainActivity extends Activity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.select_level) {
             return true;
         }
 
@@ -98,10 +102,10 @@ public class MainActivity extends Activity {
                 }
                 break;
             case MotionEvent.ACTION_MOVE:
-                if (event.getActionIndex() == mouseDownId){
+                if (event.getActionIndex() == mouseDownId) {
                     boolean valid = maze.moveBox(frame, event.getX(mouseDownId), event.getY(mouseDownId));
-                    if (valid){
-                        if (levelComplete()){
+                    if (valid) {
+                        if (levelComplete()) {
                             mouseDownId = -1;
                         }
                     }
@@ -119,11 +123,11 @@ public class MainActivity extends Activity {
     }
 
     private boolean levelComplete() {
-        if (maze.levelComplete()){
+        if (maze.levelComplete()) {
             SharedPreferences sharedPref = getSharedPreferences(SHARED_PREFERENCES, Context.MODE_PRIVATE);
             int lastLevel = sharedPref.getInt(CURRENT_LEVEL, 0);
             int nextLevel = currentLevel + 1;
-            if (lastLevel == currentLevel){
+            if (lastLevel == currentLevel) {
                 SharedPreferences.Editor editor = sharedPref.edit();
                 editor.putInt(CURRENT_LEVEL, nextLevel);
                 editor.commit();
@@ -131,6 +135,7 @@ public class MainActivity extends Activity {
 
             frame.removeAllViews();
             loadMaze(nextLevel);
+            ((MenuItem) findViewById(R.id.select_level)).setTitle(String.format(getString(R.string.select_level), currentLevel + 1));
             frame.postInvalidate();
             return true;
         }
@@ -165,6 +170,5 @@ public class MainActivity extends Activity {
             }
         });
     }
-
 
 }
