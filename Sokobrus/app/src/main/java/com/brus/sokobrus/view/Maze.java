@@ -175,6 +175,12 @@ public class Maze {
             return;
         }
 
+        // Don't move if destination field is not empty floor field
+        if (!(mazeFields.get(newPlayerRow).get(newPlayerColumn).getFieldState() == FieldState.FLOOR ||
+                mazeFields.get(newPlayerRow).get(newPlayerColumn).getFieldState() == FieldState.DOCK)){
+            return;
+        }
+
         final List<MazeFieldView> path = PathFinder.findPath(this, currentWorkerPosition, mazeFields.get(newPlayerRow).get(newPlayerColumn));
         if (path == null) {
             return;
