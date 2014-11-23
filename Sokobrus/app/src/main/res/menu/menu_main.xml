@@ -6,4 +6,9 @@
         android:title="@string/select_level"
         android:orderInCategory="100"
         android:showAsAction="always" />
+    <item
+        android:id="@+id/undo"
+        android:title="@string/undo"
+        android:orderInCategory="100"
+        android:showAsAction="always" />
 </menu>

@@ -4,5 +4,6 @@
     <string name="app_name">Sokobrus</string>
     <string name="hello_world">Hello world!</string>
     <string name="select_level">Level %d</string>
+    <string name="undo">Undo</string>
 
 </resources>

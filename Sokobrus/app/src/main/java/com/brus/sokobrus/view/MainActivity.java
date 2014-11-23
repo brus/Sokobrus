@@ -1,6 +1,5 @@
 package com.brus.sokobrus.view;
 
-import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -10,7 +9,6 @@ import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
-import android.widget.ArrayAdapter;
 import android.widget.RelativeLayout;
 
 import com.brus.sokobrus.R;
@@ -23,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class MainActivity extends Activity{
+public class MainActivity extends Activity {
 
     private static final String SAVE_STATE_KEY = "Maze";
     private static String SHARED_PREFERENCES = "shared_preferences";
@@ -46,14 +44,20 @@ public class MainActivity extends Activity{
 
         SharedPreferences sharedPref = getSharedPreferences(SHARED_PREFERENCES, Context.MODE_PRIVATE);
         currentLevel = sharedPref.getInt(CURRENT_LEVEL, 0);
-        loadMaze(currentLevel);
+        if (savedInstanceState == null) {
+            loadMaze(currentLevel);
+        } else {
+            maze = (Maze) savedInstanceState.getSerializable(SAVE_STATE_KEY);
+            maze.initializeAfterSerialization(this, frame);
+        }
         // TODO Load state if available
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(Bundle savedInstanceState) {
+        savedInstanceState.putSerializable(SAVE_STATE_KEY, maze);
         // TODO Save state
-        super.onSaveInstanceState(outState);
+        super.onSaveInstanceState(savedInstanceState);
     }
 
     @Override
@@ -83,6 +87,8 @@ public class MainActivity extends Activity{
         //noinspection SimplifiableIfStatement
         if (id == R.id.select_level) {
             return true;
+        } else if (id == R.id.undo) {
+            maze.undoMove();
         }
 
         return super.onOptionsItemSelected(item);

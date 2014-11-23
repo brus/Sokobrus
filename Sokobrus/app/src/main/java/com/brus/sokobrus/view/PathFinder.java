@@ -9,20 +9,20 @@ import java.util.Map;
  * Created by brus on 11/9/2014.
  */
 public class PathFinder {
-    public static List<MazeFieldView> findPath(Maze maze, MazeFieldView start, MazeFieldView end) {
-        Map<MazeFieldView, List<MazeFieldView>> closedNodes = new HashMap<MazeFieldView, List<MazeFieldView>>();
-        Map<MazeFieldView, List<MazeFieldView>> openNodes = new HashMap<MazeFieldView, List<MazeFieldView>>();
-        openNodes.put(start, createNewPath(new ArrayList<MazeFieldView>(), start));
-        List<List<MazeFieldView>> foundPaths = new ArrayList<List<MazeFieldView>>();
+    public static List<MazeField> findPath(Maze maze, MazeField start, MazeField end) {
+        Map<MazeField, List<MazeField>> closedNodes = new HashMap<MazeField, List<MazeField>>();
+        Map<MazeField, List<MazeField>> openNodes = new HashMap<MazeField, List<MazeField>>();
+        openNodes.put(start, new ArrayList<MazeField>());
+        List<List<MazeField>> foundPaths = new ArrayList<List<MazeField>>();
 
         checkMaze(closedNodes, openNodes, foundPaths, maze, end);
 
         return getShortestPath(foundPaths);
     }
 
-    private static List<MazeFieldView> getShortestPath(List<List<MazeFieldView>> foundPaths) {
-        List<MazeFieldView> shortestPath = null;
-        for (List<MazeFieldView> path : foundPaths) {
+    private static List<MazeField> getShortestPath(List<List<MazeField>> foundPaths) {
+        List<MazeField> shortestPath = null;
+        for (List<MazeField> path : foundPaths) {
             if (shortestPath == null || path.size() < shortestPath.size()) {
                 shortestPath = path;
             }
@@ -30,10 +30,10 @@ public class PathFinder {
         return shortestPath;
     }
 
-    private static void checkMaze(Map<MazeFieldView, List<MazeFieldView>> closedNodes, Map<MazeFieldView, List<MazeFieldView>> openNodes, List<List<MazeFieldView>> foundPaths, Maze maze, MazeFieldView end) {
+    private static void checkMaze(Map<MazeField, List<MazeField>> closedNodes, Map<MazeField, List<MazeField>> openNodes, List<List<MazeField>> foundPaths, Maze maze, MazeField end) {
         if (openNodes.keySet().iterator().hasNext()) {
-            MazeFieldView field = openNodes.keySet().iterator().next();
-            List<MazeFieldView> path = openNodes.get(field);
+            MazeField field = openNodes.keySet().iterator().next();
+            List<MazeField> path = openNodes.get(field);
             openNodes.remove(field);
             closedNodes.put(field, path);
 
@@ -46,9 +46,9 @@ public class PathFinder {
         }
     }
 
-    private static void checkDirection(Map<MazeFieldView, List<MazeFieldView>> closedNodes, Map<MazeFieldView, List<MazeFieldView>> openNodes, List<List<MazeFieldView>> foundPaths, Maze maze, int row, int column, List<MazeFieldView> path, MazeFieldView end) {
+    private static void checkDirection(Map<MazeField, List<MazeField>> closedNodes, Map<MazeField, List<MazeField>> openNodes, List<List<MazeField>> foundPaths, Maze maze, int row, int column, List<MazeField> path, MazeField end) {
         if (maze.getMazeFields().get(row).containsKey(column)) {
-            MazeFieldView field = maze.getMazeFields().get(row).get(column);
+            MazeField field = maze.getMazeFields().get(row).get(column);
             if (field == end) {
                 foundPaths.add(createNewPath(path, field));
                 return;
@@ -59,8 +59,8 @@ public class PathFinder {
         }
     }
 
-    private static List<MazeFieldView> createNewPath(List<MazeFieldView> path, MazeFieldView field) {
-        List<MazeFieldView> newPath = new ArrayList<MazeFieldView>(path);
+    private static List<MazeField> createNewPath(List<MazeField> path, MazeField field) {
+        List<MazeField> newPath = new ArrayList<MazeField>(path);
         newPath.add(field);
         return newPath;
     }

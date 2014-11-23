@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.os.SystemClock;
 import android.widget.RelativeLayout;
 
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -11,16 +13,18 @@ import java.util.Map;
 /**
  * Created by brus on 11/8/2014.
  */
-public class Maze {
+public class Maze implements Serializable{
 
-    private Map<Integer, Map<Integer, MazeFieldView>> mazeFields;
+    private Map<Integer, Map<Integer, MazeField>> mazeFields;
+    private List<Move> moves;
     private int maxColumnNumber;
     private int maxRowNumber;
     private int fieldSize;
-    MazeFieldView currentWorkerPosition;
+    MazeField currentWorkerPosition;
 
     public void Load(Activity activity, RelativeLayout frame, String level) {
-        mazeFields = new HashMap<Integer, Map<Integer, MazeFieldView>>();
+        mazeFields = new HashMap<Integer, Map<Integer, MazeField>>();
+        moves = new ArrayList<Move>();
         maxColumnNumber = 0;
         maxRowNumber = 1; // Start from 1 and increment for every new row
 
@@ -31,32 +35,40 @@ public class Maze {
         int column = 0;
         boolean anythingInRow = false;
         MazeFieldView mazeFieldView = null;
-        mazeFields.put(row, new HashMap<Integer, MazeFieldView>());
+        mazeFields.put(row, new HashMap<Integer, MazeField>());
         for (int i = 4; i < level.length(); i++) {
             switch (level.charAt(i)) {
                 case '0':
-                    mazeFieldView = new MazeFieldView(activity, row, column, false, false, false, anythingInRow);
-                    mazeFields.get(row).put(column, mazeFieldView);
+                    MazeField mazeField = new MazeField(row, column, false, false, false, anythingInRow);
+                    mazeFieldView = new MazeFieldView(activity, mazeField);
+                    mazeField.setView(mazeFieldView);
+                    mazeFields.get(row).put(column, mazeField);
                     frame.addView(mazeFieldView);
                     column++;
                     break;
                 case '1':
-                    mazeFieldView = new MazeFieldView(activity, row, column, false, false, true, true);
-                    mazeFields.get(row).put(column, mazeFieldView);
+                    mazeField = new MazeField(row, column, false, false, true, true);
+                    mazeFieldView = new MazeFieldView(activity, mazeField);
+                    mazeField.setView(mazeFieldView);
+                    mazeFields.get(row).put(column, mazeField);
                     frame.addView(mazeFieldView);
                     column++;
                     anythingInRow = true;
                     break;
                 case '2':
-                    mazeFieldView = new MazeFieldView(activity, row, column, false, true, false, false);
-                    mazeFields.get(row).put(column, mazeFieldView);
+                    mazeField = new MazeField(row, column, false, true, false, false);
+                    mazeFieldView = new MazeFieldView(activity, mazeField);
+                    mazeField.setView(mazeFieldView);
+                    mazeFields.get(row).put(column, mazeField);
                     frame.addView(mazeFieldView);
                     column++;
                     anythingInRow = true;
                     break;
                 case '3':
-                    mazeFieldView = new MazeFieldView(activity, row, column, true, false, false, true);
-                    mazeFields.get(row).put(column, mazeFieldView);
+                    mazeField = new MazeField(row, column, true, false, false, true);
+                    mazeFieldView = new MazeFieldView(activity, mazeField);
+                    mazeField.setView(mazeFieldView);
+                    mazeFields.get(row).put(column, mazeField);
                     frame.addView(mazeFieldView);
                     column++;
                     anythingInRow = true;
@@ -68,7 +80,7 @@ public class Maze {
                     row++;
                     column = 0;
                     anythingInRow = false;
-                    mazeFields.put(row, new HashMap<Integer, MazeFieldView>());
+                    mazeFields.put(row, new HashMap<Integer, MazeField>());
                     break;
             }
         }
@@ -85,11 +97,21 @@ public class Maze {
 
         fieldSize = (int) Math.min(fieldWidth, fieldHeight);
 
-        for (Map<Integer, MazeFieldView> row : mazeFields.values()) {
-            for (MazeFieldView field : row.values()) {
-                field.initializeUI(fieldSize);
+        for (int i = 0; i < frame.getChildCount(); i++) {
+            ((MazeFieldView)frame.getChildAt(i)).initializeUI(fieldSize);
+        }
+    }
+
+    public void initializeAfterSerialization(Activity activity, RelativeLayout frame) {
+        for (Map<Integer, MazeField> row : mazeFields.values()) {
+            for (MazeField mazeField : row.values()) {
+                MazeFieldView view = new MazeFieldView(activity, mazeField);
+                mazeField.setView(view);
+                frame.addView(view);
             }
         }
+
+        initializeMazeUI(frame);
     }
 
     public boolean moveBox(RelativeLayout frame, float x, float y){
@@ -111,10 +133,10 @@ public class Maze {
         }
 
         // New position is empty - move player
-        MazeFieldView newPlayerPosition = mazeFields.get(newPlayerRow).get(newPlayerColumn);
+        MazeField newPlayerPosition = mazeFields.get(newPlayerRow).get(newPlayerColumn);
         FieldState newPlayerFieldState = newPlayerPosition.getFieldState();
         if (newPlayerFieldState == FieldState.FLOOR || newPlayerFieldState == FieldState.DOCK){
-            moveOnePosition(newPlayerPosition);
+            moveWorkerOnePosition(newPlayerPosition);
             return true;
         }
 
@@ -122,7 +144,7 @@ public class Maze {
         if (newPlayerFieldState == FieldState.BOX || newPlayerFieldState == FieldState.BOX_DOCKED){
             // move right
             if (newPlayerRow == currentWorkerPosition.getRow() && newPlayerColumn == currentWorkerPosition.getColumn() + 1){
-                MazeFieldView newBoxPosition = mazeFields.get(newPlayerRow).get(newPlayerColumn + 1);
+                MazeField newBoxPosition = mazeFields.get(newPlayerRow).get(newPlayerColumn + 1);
                 FieldState newBoxFieldState = newBoxPosition.getFieldState();
                 if (newBoxFieldState == FieldState.DOCK || newBoxFieldState == FieldState.FLOOR){
                     moveBoxOnePosition(newPlayerPosition, newBoxPosition);
@@ -130,7 +152,7 @@ public class Maze {
             }
             // move left
             if (newPlayerRow == currentWorkerPosition.getRow() && newPlayerColumn == currentWorkerPosition.getColumn() - 1){
-                MazeFieldView newBoxPosition = mazeFields.get(newPlayerRow).get(newPlayerColumn - 1);
+                MazeField newBoxPosition = mazeFields.get(newPlayerRow).get(newPlayerColumn - 1);
                 FieldState newBoxFieldState = newBoxPosition.getFieldState();
                 if (newBoxFieldState == FieldState.DOCK || newBoxFieldState == FieldState.FLOOR){
                     moveBoxOnePosition(newPlayerPosition, newBoxPosition);
@@ -138,7 +160,7 @@ public class Maze {
             }
             // move down
             if (newPlayerRow == currentWorkerPosition.getRow() + 1 && newPlayerColumn == currentWorkerPosition.getColumn()){
-                MazeFieldView newBoxPosition = mazeFields.get(newPlayerRow + 1).get(newPlayerColumn);
+                MazeField newBoxPosition = mazeFields.get(newPlayerRow + 1).get(newPlayerColumn);
                 FieldState newBoxFieldState = newBoxPosition.getFieldState();
                 if (newBoxFieldState == FieldState.DOCK || newBoxFieldState == FieldState.FLOOR){
                     moveBoxOnePosition(newPlayerPosition, newBoxPosition);
@@ -146,7 +168,7 @@ public class Maze {
             }
             // move up
             if (newPlayerRow == currentWorkerPosition.getRow() - 1 && newPlayerColumn == currentWorkerPosition.getColumn()){
-                MazeFieldView newBoxPosition = mazeFields.get(newPlayerRow - 1).get(newPlayerColumn);
+                MazeField newBoxPosition = mazeFields.get(newPlayerRow - 1).get(newPlayerColumn);
                 FieldState newBoxFieldState = newBoxPosition.getFieldState();
                 if (newBoxFieldState == FieldState.DOCK || newBoxFieldState == FieldState.FLOOR){
                     moveBoxOnePosition(newPlayerPosition, newBoxPosition);
@@ -181,7 +203,7 @@ public class Maze {
             return;
         }
 
-        final List<MazeFieldView> path = PathFinder.findPath(this, currentWorkerPosition, mazeFields.get(newPlayerRow).get(newPlayerColumn));
+        final List<MazeField> path = PathFinder.findPath(this, currentWorkerPosition, mazeFields.get(newPlayerRow).get(newPlayerColumn));
         if (path == null) {
             return;
         }
@@ -189,7 +211,7 @@ public class Maze {
         Thread t = new Thread() {
             public void run() {
                 while (path.size() > 0) {
-                    moveOnePosition(path.remove(0));
+                    moveWorkerOnePosition(path.remove(0));
                     SystemClock.sleep(100);
                 }
             }
@@ -197,35 +219,70 @@ public class Maze {
         t.start();
     }
 
-    private void moveOnePosition(MazeFieldView newPosition) {
+    private void moveWorkerOnePosition(MazeField newWorkerPosition) {
+        moves.add(new Move(currentWorkerPosition, newWorkerPosition));
+        moveWorker(newWorkerPosition);
+    }
+
+    private void moveBoxOnePosition(MazeField newWorkerPosition, MazeField newBoxPosition){
+        moves.add(new Move(currentWorkerPosition, newWorkerPosition, newBoxPosition));
+        moveWorker(newWorkerPosition);
+        moveBox(newWorkerPosition, newBoxPosition);
+    }
+
+    private void moveWorker(MazeField newWorkerPosition) {
         currentWorkerPosition.setWorker(false);
-        currentWorkerPosition.postInvalidate();
+        currentWorkerPosition.getView().postInvalidate();
 
-        currentWorkerPosition = newPosition;
+        currentWorkerPosition = newWorkerPosition;
 
-        newPosition.setWorker(true);
-        newPosition.postInvalidate();
+        newWorkerPosition.setWorker(true);
+        newWorkerPosition.getView().postInvalidate();
     }
 
-    private void moveBoxOnePosition(MazeFieldView oldPosition, MazeFieldView newPosition){
-        oldPosition.setBox(false);
-        oldPosition.postInvalidate();
+    private void moveBox(MazeField oldBoxPosition, MazeField newBoxPosition){
+        oldBoxPosition.setBox(false);
+        oldBoxPosition.getView().postInvalidate();
 
-        newPosition.setBox(true);
-        newPosition.postInvalidate();
+        newBoxPosition.setBox(true);
+        newBoxPosition.getView().postInvalidate();
     }
 
-    public Map<Integer, Map<Integer, MazeFieldView>> getMazeFields() {
+    public Map<Integer, Map<Integer, MazeField>> getMazeFields() {
         return mazeFields;
     }
 
     public boolean levelComplete() {
-        for (Map<Integer, MazeFieldView> row : mazeFields.values()) {
-            for (MazeFieldView field : row.values())
+        for (Map<Integer, MazeField> row : mazeFields.values()) {
+            for (MazeField field : row.values())
                 if (field.getFieldState() == FieldState.DOCK || field.getFieldState() == FieldState.BOX){
                     return false;
                 }
         }
         return true;
+    }
+
+    public void undoMove() {
+        if (moves.size() == 0){
+            return;
+        }
+
+        Move lastMove = moves.remove(moves.size() - 1);
+
+        // Undo worker
+        currentWorkerPosition.setWorker(false);
+        currentWorkerPosition.getView().postInvalidate();
+        currentWorkerPosition = lastMove.getWorkerStartPosition();
+        currentWorkerPosition.setWorker(true);
+        currentWorkerPosition.getView().postInvalidate();
+
+        // Undo box
+        if (lastMove.getBoxEndPosition() != null){
+            lastMove.getBoxEndPosition().setBox(false);
+            lastMove.getBoxEndPosition().getView().postInvalidate();
+
+            lastMove.getWorkerEndPosition().setBox(true);
+            lastMove.getWorkerEndPosition().getView().postInvalidate();
+        }
     }
 }
