@@ -5,5 +5,9 @@
     <string name="hello_world">Hello world!</string>
     <string name="select_level">Level %d</string>
     <string name="undo">Undo</string>
+    <string name="level_complete">Level Complete</string>
+    <string name="welcome">Welcome to Sokobrus</string>
+    <string name="level">Level</string>
+    <string name="play">Play</string>
 
 </resources>

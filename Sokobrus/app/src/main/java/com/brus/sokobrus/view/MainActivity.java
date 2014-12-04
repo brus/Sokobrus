@@ -1,14 +1,17 @@
 package com.brus.sokobrus.view;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.os.Bundle;
 import android.view.GestureDetector;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
+import android.view.View;
 import android.widget.RelativeLayout;
 
 import com.brus.sokobrus.R;
@@ -30,7 +33,8 @@ public class MainActivity extends Activity {
     private GestureDetector gestureDetector;
     private Maze maze = new Maze();
     private int mouseDownId;
-    private int currentLevel;
+    private int currentLevel = 0;
+    private Menu menu;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,13 +48,13 @@ public class MainActivity extends Activity {
 
         SharedPreferences sharedPref = getSharedPreferences(SHARED_PREFERENCES, Context.MODE_PRIVATE);
         currentLevel = sharedPref.getInt(CURRENT_LEVEL, 0);
-        if (savedInstanceState == null) {
-            loadMaze(currentLevel);
-        } else {
-            maze = (Maze) savedInstanceState.getSerializable(SAVE_STATE_KEY);
-            maze.initializeAfterSerialization(this, frame);
-        }
-        // TODO Load state if available
+        loadMaze(0);
+//        if (savedInstanceState == null) {
+//            loadMaze(currentLevel);
+//        } else {
+//            maze = (Maze) savedInstanceState.getSerializable(SAVE_STATE_KEY);
+//            maze.initializeAfterSerialization(this, frame);
+//        }
     }
 
     @Override
@@ -74,6 +78,8 @@ public class MainActivity extends Activity {
         getMenuInflater().inflate(R.menu.menu_main, menu);
 
         menu.findItem(R.id.select_level).setTitle(String.format(getString(R.string.select_level), currentLevel + 1));
+
+        this.menu = menu;
         return true;
     }
 
@@ -132,17 +138,45 @@ public class MainActivity extends Activity {
         if (maze.levelComplete()) {
             SharedPreferences sharedPref = getSharedPreferences(SHARED_PREFERENCES, Context.MODE_PRIVATE);
             int lastLevel = sharedPref.getInt(CURRENT_LEVEL, 0);
-            int nextLevel = currentLevel + 1;
+            final int nextLevel = currentLevel + 1;
             if (lastLevel == currentLevel) {
                 SharedPreferences.Editor editor = sharedPref.edit();
                 editor.putInt(CURRENT_LEVEL, nextLevel);
                 editor.commit();
             }
 
-            frame.removeAllViews();
-            loadMaze(nextLevel);
-            ((MenuItem) findViewById(R.id.select_level)).setTitle(String.format(getString(R.string.select_level), currentLevel + 1));
-            frame.postInvalidate();
+            final AlertDialog dialog = new AlertDialog.Builder(this).create();
+            LayoutInflater inflater = getLayoutInflater();
+            View levelCompleteView = inflater.inflate(R.layout.level_complete, null);
+            levelCompleteView.findViewById(R.id.main_menu_button).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    //
+                }
+            });
+            levelCompleteView.findViewById(R.id.replay_level_button).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    frame.removeAllViews();
+                    loadMaze(currentLevel);
+                    menu.findItem(R.id.select_level).setTitle(String.format(getString(R.string.select_level), currentLevel));
+                    frame.postInvalidate();
+                    dialog.dismiss();
+                }
+            });
+            levelCompleteView.findViewById(R.id.next_level_button).setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    frame.removeAllViews();
+                    loadMaze(nextLevel);
+                    menu.findItem(R.id.select_level).setTitle(String.format(getString(R.string.select_level), nextLevel));
+                    frame.postInvalidate();
+                    dialog.dismiss();
+                }
+            });
+            dialog.setView(levelCompleteView);
+            dialog.show();
+
             return true;
         }
         return false;
