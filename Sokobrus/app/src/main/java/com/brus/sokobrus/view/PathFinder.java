@@ -1,5 +1,8 @@
 package com.brus.sokobrus.view;
 
+import com.brus.sokobrus.view.model.Maze;
+import com.brus.sokobrus.view.model.MazeField;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

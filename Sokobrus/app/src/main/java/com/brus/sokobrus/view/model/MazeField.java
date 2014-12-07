@@ -1,4 +1,7 @@
-package com.brus.sokobrus.view;
+package com.brus.sokobrus.view.model;
+
+import com.brus.sokobrus.view.components.MazeFieldView;
+import com.brus.sokobrus.view.model.FieldState;
 
 import java.io.Serializable;
 
@@ -14,8 +17,6 @@ public class MazeField implements Serializable {
     private boolean wall;
     private boolean dock;
     private boolean floor;
-
-    private MazeFieldView view;
 
     public MazeField(int row, int column, boolean box, boolean wall, boolean dock, boolean floor) {
         this.row = row;
@@ -95,13 +96,5 @@ public class MazeField implements Serializable {
 
     public void setBox(boolean box) {
         this.box = box;
-    }
-
-    public MazeFieldView getView() {
-        return view;
-    }
-
-    public void setView(MazeFieldView view) {
-        this.view = view;
     }
 }

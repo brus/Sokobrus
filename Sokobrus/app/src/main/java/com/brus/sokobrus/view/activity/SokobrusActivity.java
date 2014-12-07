@@ -1,8 +1,9 @@
-package com.brus.sokobrus.view;
+package com.brus.sokobrus.view.activity;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.AssetManager;
 import android.os.Bundle;
@@ -15,6 +16,8 @@ import android.view.View;
 import android.widget.RelativeLayout;
 
 import com.brus.sokobrus.R;
+import com.brus.sokobrus.Helper;
+import com.brus.sokobrus.view.model.Maze;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,11 +27,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class MainActivity extends Activity {
+public class SokobrusActivity extends Activity {
 
     private static final String SAVE_STATE_KEY = "Maze";
-    private static String SHARED_PREFERENCES = "shared_preferences";
-    private static String CURRENT_LEVEL = "current_level";
     private RelativeLayout frame;
     private GestureDetector gestureDetector;
     private Maze maze = new Maze();
@@ -40,21 +41,25 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_sokobrus);
 
         frame = (RelativeLayout) findViewById(R.id.main_layout);
+        frame.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+            @Override
+            public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                maze.initializeMazeUI(frame);
+            }
+        });
 
         setupGestureDetector();
 
-        SharedPreferences sharedPref = getSharedPreferences(SHARED_PREFERENCES, Context.MODE_PRIVATE);
-        currentLevel = sharedPref.getInt(CURRENT_LEVEL, 0);
-        loadMaze(0);
-//        if (savedInstanceState == null) {
-//            loadMaze(currentLevel);
-//        } else {
-//            maze = (Maze) savedInstanceState.getSerializable(SAVE_STATE_KEY);
-//            maze.initializeAfterSerialization(this, frame);
-//        }
+        currentLevel = getIntent().getExtras().getInt(Helper.SELECTED_LEVEL);
+        if (savedInstanceState == null) {
+            loadMaze(currentLevel);
+        } else {
+            maze = (Maze) savedInstanceState.getSerializable(SAVE_STATE_KEY);
+            maze.initializeAfterSerialization(this, frame);
+        }
     }
 
     @Override
@@ -65,19 +70,11 @@ public class MainActivity extends Activity {
     }
 
     @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        if (hasFocus) {
-            maze.initializeMazeUI(frame);
-        }
-    }
-
-    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
 
-        menu.findItem(R.id.select_level).setTitle(String.format(getString(R.string.select_level), currentLevel + 1));
+        menu.findItem(R.id.select_level).setTitle(String.format(getString(R.string.select_level), currentLevel));
 
         this.menu = menu;
         return true;
@@ -94,7 +91,7 @@ public class MainActivity extends Activity {
         if (id == R.id.select_level) {
             return true;
         } else if (id == R.id.undo) {
-            maze.undoMove();
+            maze.undoMove(frame);
         }
 
         return super.onOptionsItemSelected(item);
@@ -136,12 +133,12 @@ public class MainActivity extends Activity {
 
     private boolean levelComplete() {
         if (maze.levelComplete()) {
-            SharedPreferences sharedPref = getSharedPreferences(SHARED_PREFERENCES, Context.MODE_PRIVATE);
-            int lastLevel = sharedPref.getInt(CURRENT_LEVEL, 0);
+            SharedPreferences sharedPref = getSharedPreferences(Helper.SHARED_PREFERENCES, Context.MODE_PRIVATE);
+            int lastAvailableLevel = sharedPref.getInt(Helper.CURRENT_LEVEL, Helper.LEVEL_MIN_VALUE);
             final int nextLevel = currentLevel + 1;
-            if (lastLevel == currentLevel) {
+            if (lastAvailableLevel == currentLevel) {
                 SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putInt(CURRENT_LEVEL, nextLevel);
+                editor.putInt(Helper.CURRENT_LEVEL, nextLevel);
                 editor.commit();
             }
 
@@ -151,7 +148,8 @@ public class MainActivity extends Activity {
             levelCompleteView.findViewById(R.id.main_menu_button).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    //
+                    Intent intent = new Intent(SokobrusActivity.this, WelcomeScreenActivity.class);
+                    startActivity(intent);
                 }
             });
             levelCompleteView.findViewById(R.id.replay_level_button).setOnClickListener(new View.OnClickListener() {
@@ -193,7 +191,7 @@ public class MainActivity extends Activity {
             while ((line = bufferedReader.readLine()) != null) {
                 levels.add(line);
             }
-            maze.Load(this, frame, levels.get(level).substring(1, levels.get(level).length()));
+            maze.Load(this, frame, levels.get(level - 1).substring(1, levels.get(level - 1).length()));
         } catch (IOException e) {
             e.printStackTrace();
         }

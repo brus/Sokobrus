@@ -1,4 +1,4 @@
-package com.brus.sokobrus.view;
+package com.brus.sokobrus.view.model;
 
 /**
  * Created by brus on 11/12/2014.

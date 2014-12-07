@@ -1,4 +1,4 @@
-package com.brus.sokobrus.view;
+package com.brus.sokobrus.view.components;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -7,9 +7,10 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.view.View;
 
+import com.brus.sokobrus.Helper;
 import com.brus.sokobrus.R;
-
-import java.io.Serializable;
+import com.brus.sokobrus.view.model.FieldState;
+import com.brus.sokobrus.view.model.MazeField;
 
 /**
  * Created by brus on 11/8/2014.
@@ -26,6 +27,7 @@ public class MazeFieldView extends View {
     public MazeFieldView(Context context, MazeField mazeField) {
         super(context);
 
+        setId(Helper.calculateFieldViewId(mazeField.getRow(), mazeField.getColumn()));
         this.mazeField = mazeField;
         painter.setAntiAlias(true);
     }

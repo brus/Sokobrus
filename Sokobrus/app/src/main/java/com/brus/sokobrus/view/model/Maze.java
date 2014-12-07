@@ -1,8 +1,12 @@
-package com.brus.sokobrus.view;
+package com.brus.sokobrus.view.model;
 
 import android.app.Activity;
 import android.os.SystemClock;
 import android.widget.RelativeLayout;
+
+import com.brus.sokobrus.Helper;
+import com.brus.sokobrus.view.PathFinder;
+import com.brus.sokobrus.view.components.MazeFieldView;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -41,7 +45,6 @@ public class Maze implements Serializable{
                 case '0':
                     MazeField mazeField = new MazeField(row, column, false, false, false, anythingInRow);
                     mazeFieldView = new MazeFieldView(activity, mazeField);
-                    mazeField.setView(mazeFieldView);
                     mazeFields.get(row).put(column, mazeField);
                     frame.addView(mazeFieldView);
                     column++;
@@ -49,7 +52,6 @@ public class Maze implements Serializable{
                 case '1':
                     mazeField = new MazeField(row, column, false, false, true, true);
                     mazeFieldView = new MazeFieldView(activity, mazeField);
-                    mazeField.setView(mazeFieldView);
                     mazeFields.get(row).put(column, mazeField);
                     frame.addView(mazeFieldView);
                     column++;
@@ -58,7 +60,6 @@ public class Maze implements Serializable{
                 case '2':
                     mazeField = new MazeField(row, column, false, true, false, false);
                     mazeFieldView = new MazeFieldView(activity, mazeField);
-                    mazeField.setView(mazeFieldView);
                     mazeFields.get(row).put(column, mazeField);
                     frame.addView(mazeFieldView);
                     column++;
@@ -67,7 +68,6 @@ public class Maze implements Serializable{
                 case '3':
                     mazeField = new MazeField(row, column, true, false, false, true);
                     mazeFieldView = new MazeFieldView(activity, mazeField);
-                    mazeField.setView(mazeFieldView);
                     mazeFields.get(row).put(column, mazeField);
                     frame.addView(mazeFieldView);
                     column++;
@@ -106,7 +106,6 @@ public class Maze implements Serializable{
         for (Map<Integer, MazeField> row : mazeFields.values()) {
             for (MazeField mazeField : row.values()) {
                 MazeFieldView view = new MazeFieldView(activity, mazeField);
-                mazeField.setView(view);
                 frame.addView(view);
             }
         }
@@ -136,7 +135,7 @@ public class Maze implements Serializable{
         MazeField newPlayerPosition = mazeFields.get(newPlayerRow).get(newPlayerColumn);
         FieldState newPlayerFieldState = newPlayerPosition.getFieldState();
         if (newPlayerFieldState == FieldState.FLOOR || newPlayerFieldState == FieldState.DOCK){
-            moveWorkerOnePosition(newPlayerPosition);
+            moveWorkerOnePosition(newPlayerPosition, frame);
             return true;
         }
 
@@ -147,7 +146,7 @@ public class Maze implements Serializable{
                 MazeField newBoxPosition = mazeFields.get(newPlayerRow).get(newPlayerColumn + 1);
                 FieldState newBoxFieldState = newBoxPosition.getFieldState();
                 if (newBoxFieldState == FieldState.DOCK || newBoxFieldState == FieldState.FLOOR){
-                    moveBoxOnePosition(newPlayerPosition, newBoxPosition);
+                    moveBoxOnePosition(newPlayerPosition, newBoxPosition, frame);
                 }
             }
             // move left
@@ -155,7 +154,7 @@ public class Maze implements Serializable{
                 MazeField newBoxPosition = mazeFields.get(newPlayerRow).get(newPlayerColumn - 1);
                 FieldState newBoxFieldState = newBoxPosition.getFieldState();
                 if (newBoxFieldState == FieldState.DOCK || newBoxFieldState == FieldState.FLOOR){
-                    moveBoxOnePosition(newPlayerPosition, newBoxPosition);
+                    moveBoxOnePosition(newPlayerPosition, newBoxPosition, frame);
                 }
             }
             // move down
@@ -163,7 +162,7 @@ public class Maze implements Serializable{
                 MazeField newBoxPosition = mazeFields.get(newPlayerRow + 1).get(newPlayerColumn);
                 FieldState newBoxFieldState = newBoxPosition.getFieldState();
                 if (newBoxFieldState == FieldState.DOCK || newBoxFieldState == FieldState.FLOOR){
-                    moveBoxOnePosition(newPlayerPosition, newBoxPosition);
+                    moveBoxOnePosition(newPlayerPosition, newBoxPosition, frame);
                 }
             }
             // move up
@@ -171,14 +170,14 @@ public class Maze implements Serializable{
                 MazeField newBoxPosition = mazeFields.get(newPlayerRow - 1).get(newPlayerColumn);
                 FieldState newBoxFieldState = newBoxPosition.getFieldState();
                 if (newBoxFieldState == FieldState.DOCK || newBoxFieldState == FieldState.FLOOR){
-                    moveBoxOnePosition(newPlayerPosition, newBoxPosition);
+                    moveBoxOnePosition(newPlayerPosition, newBoxPosition, frame);
                 }
             }
         }
         return false;
     }
 
-    public void gotoCoordinate(RelativeLayout frame, float x, float y) {
+    public void gotoCoordinate(final RelativeLayout frame, float x, float y) {
         int[] locationOnScreen = new int[2];
         frame.getLocationOnScreen(locationOnScreen);
 
@@ -211,7 +210,7 @@ public class Maze implements Serializable{
         Thread t = new Thread() {
             public void run() {
                 while (path.size() > 0) {
-                    moveWorkerOnePosition(path.remove(0));
+                    moveWorkerOnePosition(path.remove(0), frame);
                     SystemClock.sleep(100);
                 }
             }
@@ -219,33 +218,33 @@ public class Maze implements Serializable{
         t.start();
     }
 
-    private void moveWorkerOnePosition(MazeField newWorkerPosition) {
+    private void moveWorkerOnePosition(MazeField newWorkerPosition, RelativeLayout frame) {
         moves.add(new Move(currentWorkerPosition, newWorkerPosition));
-        moveWorker(newWorkerPosition);
+        moveWorker(newWorkerPosition, frame);
     }
 
-    private void moveBoxOnePosition(MazeField newWorkerPosition, MazeField newBoxPosition){
+    private void moveBoxOnePosition(MazeField newWorkerPosition, MazeField newBoxPosition, RelativeLayout frame){
         moves.add(new Move(currentWorkerPosition, newWorkerPosition, newBoxPosition));
-        moveWorker(newWorkerPosition);
-        moveBox(newWorkerPosition, newBoxPosition);
+        moveWorker(newWorkerPosition, frame);
+        moveBox(newWorkerPosition, newBoxPosition, frame);
     }
 
-    private void moveWorker(MazeField newWorkerPosition) {
+    private void moveWorker(MazeField newWorkerPosition, RelativeLayout frame) {
         currentWorkerPosition.setWorker(false);
-        currentWorkerPosition.getView().postInvalidate();
+        Helper.getFieldView(currentWorkerPosition, frame).postInvalidate();
 
         currentWorkerPosition = newWorkerPosition;
 
         newWorkerPosition.setWorker(true);
-        newWorkerPosition.getView().postInvalidate();
+        Helper.getFieldView(newWorkerPosition, frame).postInvalidate();
     }
 
-    private void moveBox(MazeField oldBoxPosition, MazeField newBoxPosition){
+    private void moveBox(MazeField oldBoxPosition, MazeField newBoxPosition, RelativeLayout frame){
         oldBoxPosition.setBox(false);
-        oldBoxPosition.getView().postInvalidate();
+        Helper.getFieldView(oldBoxPosition, frame).postInvalidate();
 
         newBoxPosition.setBox(true);
-        newBoxPosition.getView().postInvalidate();
+        Helper.getFieldView(newBoxPosition, frame).postInvalidate();
     }
 
     public Map<Integer, Map<Integer, MazeField>> getMazeFields() {
@@ -262,7 +261,7 @@ public class Maze implements Serializable{
         return true;
     }
 
-    public void undoMove() {
+    public void undoMove(RelativeLayout frame) {
         if (moves.size() == 0){
             return;
         }
@@ -271,18 +270,18 @@ public class Maze implements Serializable{
 
         // Undo worker
         currentWorkerPosition.setWorker(false);
-        currentWorkerPosition.getView().postInvalidate();
+        Helper.getFieldView(currentWorkerPosition, frame).postInvalidate();
         currentWorkerPosition = lastMove.getWorkerStartPosition();
         currentWorkerPosition.setWorker(true);
-        currentWorkerPosition.getView().postInvalidate();
+        Helper.getFieldView(currentWorkerPosition, frame).postInvalidate();
 
         // Undo box
         if (lastMove.getBoxEndPosition() != null){
             lastMove.getBoxEndPosition().setBox(false);
-            lastMove.getBoxEndPosition().getView().postInvalidate();
+            Helper.getFieldView(lastMove.getBoxEndPosition(), frame).postInvalidate();
 
             lastMove.getWorkerEndPosition().setBox(true);
-            lastMove.getWorkerEndPosition().getView().postInvalidate();
+            Helper.getFieldView(lastMove.getWorkerEndPosition(), frame).postInvalidate();
         }
     }
 }

@@ -1,4 +1,6 @@
-package com.brus.sokobrus.view;
+package com.brus.sokobrus.view.model;
+
+import com.brus.sokobrus.view.model.MazeField;
 
 import java.io.Serializable;
 
